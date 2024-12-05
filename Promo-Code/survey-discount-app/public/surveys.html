@@ -1,0 +1,15 @@
+function renderSurveyList(surveys) {
+    const tableBody = document.getElementById('surveyList');
+    tableBody.innerHTML = surveys.map(survey => `
+        <tr>
+            <td>${survey.name}</td>
+            <td>${survey.description}</td>
+            <td>
+                <a href="/responses.html?shop=${encodeURIComponent(survey.shop)}&id=${survey._id}" 
+                   class="text-blue-600 hover:text-blue-800">
+                    View Responses
+                </a>
+            </td>
+        </tr>
+    `).join('');
+} 

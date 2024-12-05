@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header - Added icon and improved button -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-chart-pie text-blue-600 text-2xl mr-3"></i>
+                <h1 class="text-2xl font-bold text-gray-800">Survey Saver</h1>
+            </div>
+            <a href="/create-survey.html" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
+                <i class="fas fa-plus mr-2"></i>
+                Create New Survey
+            </a>
+        </div>
+
+        <!-- Stats Cards - Added icons and improved styling -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 mr-4">
+                        <i class="fas fa-poll text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-600">Total Responses</h2>
+                        <p class="text-3xl font-bold text-blue-600" id="totalResponses">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 mr-4">
+                        <i class="fas fa-ticket-alt text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-600">Discounts Generated</h2>
+                        <p class="text-3xl font-bold text-green-600" id="totalDiscounts">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions - Added icons -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                Quick Actions
+            </h2>
+            <div class="flex space-x-4">
+                <a href="/create-survey.html" class="text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Create New Survey
+                </a>
+                <a href="/responses.html" class="text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-list mr-2"></i>
+                    View All Responses
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity - Improved table styling -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fas fa-clock text-purple-500 mr-2"></i>
+                Recent Activity
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Date</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Survey</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Action</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Share</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Deploy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="surveysContainer">
+                        <!-- Surveys will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Keeping all the original JavaScript exactly the same
+        let currentShop = new URLSearchParams(window.location.search).get('shop') || 'survey-saver.myshopify.com';
+
+        async function loadSurveys() {
+            try {
+                const response = await fetch(`/api/surveys?shop=${currentShop}`);
+                const surveys = await response.json();
+                renderSurveys(surveys);
+            } catch (error) {
+                console.error('Error loading surveys:', error);
+            }
+        }
+
+        function renderSurveys(surveys) {
+            const surveysContainer = document.getElementById('surveysContainer');
+            surveysContainer.innerHTML = surveys.map(survey => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="py-3 px-4 text-sm">
+                        ${new Date(survey.createdAt).toLocaleDateString()}
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        ${survey.name}
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        <a href="/responses.html?id=${survey._id}&shop=${currentShop}" 
+                           class="text-blue-600 hover:text-blue-800">
+                            View Responses
+                        </a>
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        ${survey.isActiveCheckout ? 'Active' : 'Inactive'}
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        <button onclick="shareSurvey('${survey._id}')" 
+                                class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </td>
+                    <td class="py-3 px-4 text-sm">
+                        <button onclick="deployToCheckout('${survey._id}')" 
+                                class="text-green-600 hover:text-green-800">
+                            Deploy
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function shareSurvey(surveyId) {
+            const surveyUrl = `${window.location.origin}/survey.html?id=${surveyId}&shop=${currentShop}`;
+            navigator.clipboard.writeText(surveyUrl);
+            alert('Survey URL copied to clipboard!');
+        }
+
+        function deployToCheckout(surveyId) {
+            fetch(`/api/surveys/deploy`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ surveyId, shop: currentShop })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Survey deployed to checkout successfully!');
+                } else {
+                    alert('Failed to deploy survey to checkout.');
+                }
+            })
+            .catch(error => {
+                console.error('Error deploying survey:', error);
+                alert('An error occurred while deploying the survey.');
+            });
+        }
+
+        async function updateStats() {
+            try {
+                const shop = new URLSearchParams(window.location.search).get('shop') || 'survey-saver.myshopify.com';
+                const response = await fetch(`/api/stats?shop=${shop}`);
+                const stats = await response.json();
+                
+                document.getElementById('totalResponses').textContent = stats.totalResponses;
+                document.getElementById('totalDiscounts').textContent = stats.totalDiscounts;
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Load surveys when page loads
+        document.addEventListener('DOMContentLoaded', loadSurveys);
+        document.addEventListener('DOMContentLoaded', updateStats);
+    </script>
+</body>
+</html>

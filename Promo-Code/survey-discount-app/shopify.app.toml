@@ -1,0 +1,12 @@
+name = "Survey Discount App"
+client_id = "YOUR_CLIENT_ID"
+application_url = "https://your-app-url.com"
+embedded = true
+
+[access_scopes]
+# Required for creating discount codes
+write_discounts = "write_discounts"
+read_discounts = "read_discounts"
+# Required for checkout modification
+write_checkouts = "write_checkouts"
+read_checkouts = "read_checkouts" 

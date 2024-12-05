@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Survey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-gray-50 min-h-screen">
+    <div class="min-h-screen p-6 flex items-center justify-center">
+        <div class="max-w-2xl w-full">
+            <!-- Survey Container -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 transition-all duration-300">
+                <div id="surveyContainer">
+                    <div class="text-center mb-8">
+                        <i class="fas fa-clipboard-list text-blue-500 text-3xl mb-4"></i>
+                        <h1 class="text-2xl font-bold text-gray-800" id="surveyTitle">Loading survey...</h1>
+                        <p class="text-gray-600 mt-2" id="surveyDescription"></p>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-100 rounded-full h-2 mb-8">
+                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Questions Container -->
+                    <div id="questionsContainer" class="space-y-8"></div>
+
+                    <!-- Submit Button -->
+                    <button id="submitSurvey" class="mt-8 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 w-full flex items-center justify-center">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Submit Survey
+                    </button>
+                </div>
+
+                <!-- Thank You Message (hidden by default) -->
+                <div id="thankYouMessage" class="hidden text-center">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-green-500 text-2xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Thank You!</h2>
+                        <p class="text-gray-600">Your responses have been recorded.</p>
+                    </div>
+                    
+                    <div id="discountCodeContainer" class="mb-6">
+                        <p class="font-medium text-gray-700 mb-3">Your discount code:</p>
+                        <div id="discountCode" class="bg-blue-50 p-6 rounded-xl text-center text-xl font-mono font-bold text-blue-600 border-2 border-blue-100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const surveyId = urlParams.get('id');
+            const shop = urlParams.get('shop');
+
+            if (!surveyId || !shop) {
+                alert('Missing survey ID or shop parameter');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/surveys/${surveyId}?shop=${shop}`);
+                const survey = await response.json();
+
+                document.getElementById('surveyTitle').textContent = survey.name;
+                document.getElementById('surveyDescription').textContent = survey.description;
+
+                const questionsContainer = document.getElementById('questionsContainer');
+                survey.questions.forEach((question, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'bg-gray-50 rounded-xl p-6 transition-all duration-300 hover:shadow-md';
+                    questionDiv.innerHTML = `
+                        <label class="block text-gray-800 font-medium mb-3 text-lg">
+                            ${index + 1}. ${question.text}
+                        </label>
+                        ${renderQuestionInput(question, index)}
+                    `;
+                    questionsContainer.appendChild(questionDiv);
+
+                    // Update progress bar as questions are answered
+                    const input = questionDiv.querySelector('input, select');
+                    if (input) {
+                        input.addEventListener('change', updateProgress);
+                    }
+                });
+
+                document.getElementById('submitSurvey').addEventListener('click', async () => {
+                    try {
+                        const responses = survey.questions.map((question, index) => {
+                            const answer = getQuestionResponse(question, index);
+                            if (!answer) {
+                                throw new Error(`Please answer question: ${question.text}`);
+                            }
+                            return {
+                                questionId: question._id,
+                                answer: answer
+                            };
+                        });
+
+                        const submitButton = document.getElementById('submitSurvey');
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+
+                        const submitResponse = await fetch('/api/checkout/complete', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                shop,
+                                surveyId,
+                                responses
+                            })
+                        });
+
+                        if (!submitResponse.ok) {
+                            throw new Error('Failed to submit survey');
+                        }
+
+                        const result = await submitResponse.json();
+
+                        if (result.success && result.discountCode) {
+                            document.getElementById('surveyContainer').classList.add('hidden');
+                            document.getElementById('thankYouMessage').classList.remove('hidden');
+                            document.getElementById('discountCode').textContent = result.discountCode;
+                        } else {
+                            throw new Error('Invalid response from server');
+                        }
+                    } catch (error) {
+                        console.error('Error submitting survey:', error);
+                        alert(error.message || 'Failed to submit survey. Please try again.');
+                    } finally {
+                        const submitButton = document.getElementById('submitSurvey');
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Survey';
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading survey:', error);
+                alert('Failed to load survey');
+            }
+        });
+
+        function renderQuestionInput(question, index) {
+            switch (question.type) {
+                case 'text':
+                    return `<input type="text" name="question_${index}" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-300 px-4 py-2">`;
+                
+                case 'multiple':
+                    if (!question.options || question.options.length === 0) {
+                        return '<p class="text-red-600">Error: No options available</p>';
+                    }
+                    return `
+                        <div class="space-y-3">
+                            ${question.options.map((option, optionIndex) => `
+                                <label class="flex items-center p-3 rounded-xl hover:bg-white cursor-pointer transition-all duration-300">
+                                    <input type="radio" name="question_${index}" value="${option}" class="hidden peer">
+                                    <div class="w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center mr-3 peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all duration-300">
+                                        <i class="fas fa-check text-white text-sm opacity-0 peer-checked:opacity-100"></i>
+                                    </div>
+                                    <span class="text-gray-700">${option}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                
+                case 'rating':
+                    return `
+                        <select name="question_${index}" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-300">
+                            <option value="">Select a rating</option>
+                            ${[1,2,3,4,5].map(num => `<option value="${num}">${num} Star${num !== 1 ? 's' : ''}</option>`).join('')}
+                        </select>`;
+                
+                default:
+                    return `<input type="text" name="question_${index}" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-all duration-300">`;
+            }
+        }
+
+        function getQuestionResponse(question, index) {
+            const input = document.querySelector(`[name="question_${index}"]`);
+            if (!input) return '';
+            
+            switch (question.type) {
+                case 'multiple':
+                    const selectedRadio = document.querySelector(`[name="question_${index}"]:checked`);
+                    return selectedRadio ? selectedRadio.value : '';
+                    
+                case 'rating':
+                    return input.value ? parseInt(input.value) : '';
+                    
+                default: // text
+                    return input.value.trim();
+            }
+        }
+
+        function updateProgress() {
+            const totalQuestions = document.querySelectorAll('input, select').length;
+            const answeredQuestions = document.querySelectorAll('input:not([value=""]), select:not([value=""]), input:checked').length;
+            const progress = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+    </script>
+</body>
+</html> 

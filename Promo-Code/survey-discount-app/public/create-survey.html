@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Survey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <i class="fas fa-clipboard-list text-blue-600 text-2xl mr-3"></i>
+                <h1 class="text-2xl font-bold text-gray-800">Create New Survey</h1>
+            </div>
+            <a href="/" class="flex items-center text-blue-600 hover:text-blue-800 transition duration-150">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Surveys
+            </a>
+        </div>
+        
+        <form id="surveyForm" class="space-y-8">
+            <div class="bg-white rounded-xl shadow-md p-6 space-y-6">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Basic Information
+                </h2>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Survey Name</label>
+                    <input type="text" id="surveyName" required 
+                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="surveyDescription" rows="3" 
+                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Discount Settings</label>
+                    <div class="flex gap-4">
+                        <select id="discountType" 
+                                class="rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150">
+                            <option value="percentage">Percentage</option>
+                            <option value="fixed">Fixed Amount</option>
+                        </select>
+                        <input type="number" id="discountValue" value="2" min="0" 
+                               class="w-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-question-circle text-purple-500 mr-2"></i>
+                    Survey Questions
+                </h2>
+                
+                <div id="questionsContainer" class="space-y-6">
+                    <!-- Questions will be added here -->
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button type="button" onclick="addQuestion()" 
+                            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150 flex items-center">
+                        <i class="fas fa-plus mr-2"></i>Add Question
+                    </button>
+                    <button type="submit" 
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-150 flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i>Create Survey
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div id="successModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+            <div class="relative top-20 mx-auto p-6 border w-96 shadow-lg rounded-xl bg-white">
+                <div class="text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                        <i class="fas fa-check text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Survey Created!</h3>
+                    <p class="text-sm text-gray-500 mb-6">Your survey has been created successfully.</p>
+                    <div class="flex flex-col space-y-3">
+                        <button onclick="shareSurvey()" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150">
+                            <i class="fas fa-share-alt mr-2"></i>Share Survey
+                        </button>
+                        <button onclick="closeModal()" 
+                                class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-150">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSurveyId = null;
+        const shop = new URLSearchParams(window.location.search).get('shop') || 'survey-saver.myshopify.com';
+
+        function addQuestion() {
+            const questionsContainer = document.getElementById('questionsContainer');
+            const questionBlock = document.createElement('div');
+            questionBlock.className = 'question-block bg-gray-50 p-6 rounded-xl border border-gray-200';
+            
+            questionBlock.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1 mr-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Question Text</label>
+                        <input type="text" 
+                            class="question-text w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150" 
+                            placeholder="Enter your question" 
+                            required>
+                    </div>
+                    <button type="button" 
+                        onclick="this.closest('.question-block').remove()" 
+                        class="text-red-600 hover:text-red-800 mt-6 transition duration-150">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Question Type</label>
+                    <select class="question-type w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150">
+                        <option value="text">Text</option>
+                        <option value="multiple">Multiple Choice</option>
+                        <option value="rating">Rating (1-5)</option>
+                    </select>
+                </div>
+
+                <div class="options-container hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                    <div class="mb-2">
+                        <div class="options-list space-y-2"></div>
+                        <button type="button" 
+                            onclick="addOption(this)" 
+                            class="mt-3 text-blue-600 hover:text-blue-800 text-sm transition duration-150">
+                            <i class="fas fa-plus mr-1"></i>Add Option
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const questionType = questionBlock.querySelector('.question-type');
+            questionType.addEventListener('change', function() {
+                const optionsContainer = this.closest('.question-block').querySelector('.options-container');
+                const optionsList = optionsContainer.querySelector('.options-list');
+                
+                if (this.value === 'multiple') {
+                    optionsContainer.classList.remove('hidden');
+                    if (optionsList.children.length === 0) {
+                        addOption(optionsContainer.querySelector('button'));
+                        addOption(optionsContainer.querySelector('button'));
+                    }
+                } else {
+                    optionsContainer.classList.add('hidden');
+                }
+            });
+
+            questionsContainer.appendChild(questionBlock);
+            questionBlock.querySelector('.question-text').focus();
+        }
+
+        function addOption(button) {
+            const optionsList = button.closest('.options-container').querySelector('.options-list');
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'flex items-center gap-2';
+            
+            optionDiv.innerHTML = `
+                <input type="text" 
+                    class="option-input flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150" 
+                    placeholder="Enter option" 
+                    required>
+                <button type="button" 
+                    class="text-red-600 hover:text-red-800 p-2 transition duration-150" 
+                    onclick="removeOption(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            optionsList.appendChild(optionDiv);
+            optionDiv.querySelector('.option-input').focus();
+        }
+
+        function removeOption(button) {
+            const optionsList = button.closest('.options-list');
+            if (optionsList.children.length > 2) {
+                button.closest('.flex').remove();
+            } else {
+                alert('Multiple choice questions must have at least 2 options');
+            }
+        }
+
+        document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('Form submitted');
+            
+            try {
+                const shop = new URLSearchParams(window.location.search).get('shop') || 'survey-saver.myshopify.com';
+                console.log('Shop:', shop);
+
+                const questionBlocks = document.querySelectorAll('.question-block');
+                if (questionBlocks.length === 0) {
+                    throw new Error('Please add at least one question to your survey');
+                }
+
+                const questions = Array.from(questionBlocks).map((block, index) => {
+                    const questionText = block.querySelector('.question-text').value.trim();
+                    if (!questionText) {
+                        throw new Error('Question text cannot be empty');
+                    }
+
+                    const question = {
+                        text: questionText,
+                        type: block.querySelector('.question-type').value,
+                        order: index + 1,
+                        options: []
+                    };
+
+                    if (question.type === 'multiple') {
+                        question.options = Array.from(block.querySelectorAll('.option-input'))
+                            .map(input => input.value.trim())
+                            .filter(Boolean);
+
+                        if (question.options.length < 2) {
+                            throw new Error('Multiple choice questions must have at least 2 options');
+                        }
+                    }
+
+                    return question;
+                });
+
+                const surveyData = {
+                    shop: shop,
+                    name: document.getElementById('surveyName').value.trim(),
+                    description: document.getElementById('surveyDescription').value.trim(),
+                    questions: questions,
+                    discountSettings: {
+                        type: document.getElementById('discountType').value,
+                        value: Number(document.getElementById('discountValue').value)
+                    }
+                };
+
+                console.log('Submitting survey data:', surveyData);
+
+                const response = await fetch('/api/surveys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(surveyData)
+                });
+
+                console.log('Response received:', response);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (result.success) {
+                    currentSurveyId = result.surveyId;
+                    document.getElementById('successModal').classList.remove('hidden');
+                } else {
+                    throw new Error(result.error || 'Failed to create survey');
+                }
+            } catch (error) {
+                console.error('Error creating survey:', error);
+                alert('Failed to create survey: ' + error.message);
+            }
+        });
+
+        function closeModal() {
+            document.getElementById('successModal').classList.add('hidden');
+            window.location.href = `/?shop=${shop}`;
+        }
+
+        function shareSurvey() {
+            const surveyUrl = `${window.location.origin}/survey.html?id=${currentSurveyId}&shop=${shop}`;
+            navigator.clipboard.writeText(surveyUrl);
+            alert('Survey URL copied to clipboard!');
+        }
+
+        addQuestion();
+    </script>
+</body>
+</html> 

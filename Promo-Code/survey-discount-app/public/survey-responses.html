@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Responses - Survey Saver</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen p-6">
+        <div class="max-w-7xl mx-auto">
+            <!-- Navigation -->
+            <nav class="mb-8">
+                <a href="/" id="backLink" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800">Survey Responses</h1>
+                    <p class="text-gray-600">View all survey responses and generated discount codes</p>
+                </header>
+
+                <!-- Survey Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Survey</label>
+                    <select id="surveySelect" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Loading surveys...</option>
+                    </select>
+                </div>
+
+                <!-- Response Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-800">Total Responses</h3>
+                        <p id="totalResponses" class="text-3xl font-bold text-blue-600">0</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-800">Discount Codes Used</h3>
+                        <p id="codesUsed" class="text-3xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-purple-800">Average Rating</h3>
+                        <p id="avgRating" class="text-3xl font-bold text-purple-600">0</p>
+                    </div>
+                </div>
+
+                <!-- Responses Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Response</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="responsesTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Responses will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/survey-responses.js"></script>
+    <script>
+        // Update back link with shop parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const shop = urlParams.get('shop');
+            if (shop) {
+                document.getElementById('backLink').href = `/?shop=${shop}`;
+            }
+        });
+    </script>
+</body>
+</html> 
